@@ -10,15 +10,20 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webelement import WebElement
 import re
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 
 class MyProteinScraper:
-    def __init__(self, email, password):
+    def __init__(self, email, password, smtp_name,smtp_password):
         self.login_url = "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account"
         self.email = email
         self.password = password
         self.driver = None
+        self.smtp_name = smtp_name
+        self.smtp_password = smtp_password
 
     def driver_setup(self):
         options = Options()
@@ -127,10 +132,10 @@ class MyProteinScraper:
             )
             promo_code_bracket.send_keys("PIAFIT")
             
-            #wait till overlay disappears
-            WebDriverWait(self.driver, 20).until(
-                EC.invisibility_of_element((By.CLASS_NAME, "responsiveFlyoutBasket_overlay"))
-            )
+            #move cursor so overlay disappears
+            ActionChains(self.driver) \
+                .move_by_offset(7, 9) \
+                .perform()
             
             #click on "unovči kodo" button
             unocvi_kodo_button = WebDriverWait(self.driver, 10).until(
@@ -168,6 +173,35 @@ class MyProteinScraper:
             return None
     
     
+    def send_mail(self, discount_percentage):
+        try:
+            email_from = self.smtp_name
+            email_to = "seba.kauzar@gmail.com"
+            email_subject = "Myprotein discount!!!"
+            
+            message = MIMEMultipart()
+            message["From"] = email_from
+            message["To"] = email_to
+            message["Subject"] = email_subject
+            
+            email_text = f"The discount is currently at {discount_percentage}%"
+            
+            message.attach(MIMEText(email_text, "plain"))
+            
+            #setting up gmail SMTP server
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(self.smtp_name, self.smtp_password)
+                server.sendmail(email_from, email_to, message.as_string())
+                print("Email sent")
+            
+        
+        except Exception as e:
+            print(f"Error while sending email: {e}")
+            
+        finally:
+            self.driver.quit()
+    
     def run(self):
         self.driver_setup()
         self.sign_in()
@@ -175,15 +209,20 @@ class MyProteinScraper:
         self.input_code()
         
         discount_percentage = self.extract_discount_percentage()
-        if(discount_percentage):
-            print(discount_percentage)
+        
+        if (discount_percentage > 50):            
+            self.send_mail(discount_percentage)
 
 if __name__ == "__main__":
     
-    '''Replace these two with your own email and password'''
+    '''Replace with your own email and password used for myprotein account'''
     email = "seba.kauzar@gmail.com"
     password = "8u3UTNWrZSRsY!r"
+    
+    '''Replace these with your gmail name and password used for smtp'''
+    smtp_name = "seba.kauzar@gmail.com"
+    smtp_password = "wdlg jmet uwot xnnx"
 
-    scraper = MyProteinScraper(email, password)
+    scraper = MyProteinScraper(email, password, smtp_name, smtp_password)
 
     scraper.run()
