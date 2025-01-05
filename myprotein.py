@@ -13,17 +13,32 @@ import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+import json
 
 
 class MyProteinScraper:
-    def __init__(self, email, password, smtp_name,smtp_password):
+    def __init__(self, user_data):
         self.login_url = "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account"
-        self.email = email
-        self.password = password
+        
+        with open(user_data, "r") as file:
+            data = json.load(file)
+        if not data:
+            raise FileNotFoundError(f"Could not load {user_data}.")
+        
+        self.data = data
+        
+        account_data = data["myProteinAccountData"]
+        self.email = account_data["myproteinUsername"]
+        self.password = account_data["myproteinPassword"]
+        
+        smtp_data = data["smtp"]
+        self.smtp_name = smtp_data["user"]
+        self.smtp_password = smtp_data["password"]
+        self.port = smtp_data["port"]
+        self.server = smtp_data["server"]
+                
         self.driver = None
-        self.smtp_name = smtp_name
-        self.smtp_password = smtp_password
+
 
     def driver_setup(self):
         options = Options()
@@ -176,8 +191,8 @@ class MyProteinScraper:
     def send_mail(self, discount_percentage):
         try:
             email_from = self.smtp_name
-            email_to = "seba.kauzar@gmail.com"
-            email_subject = "Myprotein discount!!!"
+            email_to = self.data["emailRecipient"]
+            email_subject = "Myprotein discount is over 50%"
             
             message = MIMEMultipart()
             message["From"] = email_from
@@ -189,7 +204,7 @@ class MyProteinScraper:
             message.attach(MIMEText(email_text, "plain"))
             
             #setting up gmail SMTP server
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            with smtplib.SMTP(self.server, self.port) as server:
                 server.starttls()
                 server.login(self.smtp_name, self.smtp_password)
                 server.sendmail(email_from, email_to, message.as_string())
@@ -210,7 +225,7 @@ class MyProteinScraper:
         
         discount_percentage = self.extract_discount_percentage()
         
-        if (discount_percentage > 50):            
+        if (discount_percentage >= 50):            
             self.send_mail(discount_percentage)
 
 if __name__ == "__main__":
@@ -223,6 +238,6 @@ if __name__ == "__main__":
     smtp_name = "seba.kauzar@gmail.com"
     smtp_password = "wdlg jmet uwot xnnx"
 
-    scraper = MyProteinScraper(email, password, smtp_name, smtp_password)
+    scraper = MyProteinScraper("userdata.json")
 
     scraper.run()

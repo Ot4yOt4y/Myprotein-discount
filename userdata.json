@@ -1,0 +1,17 @@
+{
+    "myProteinAccountData": { 
+        "myproteinUsername": "seba.kauzar@gmail.com",
+        "myproteinPassword": "8u3UTNWrZSRsY!r"
+    },
+
+    "smtp": {
+        "port": 587,
+        "server": "smtp.gmail.com",
+        "user": "seba.kauzar@gmail.com",
+        "password": "wdlg jmet uwot xnnx"
+    }, 
+
+    "emailRecipient": "seba.kauzar@gmail.com"
+    
+}
+
