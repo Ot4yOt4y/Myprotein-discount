@@ -1,17 +1,17 @@
 {
+    "comment": "You can setup your smtp password on this link: https://myaccount.google.com/apppasswords; Make sure you have 2-factor authentication enabled",
+
     "myProteinAccountData": { 
         "myproteinUsername": "seba.kauzar@gmail.com",
         "myproteinPassword": "8u3UTNWrZSRsY!r"
     },
-
     "smtp": {
         "port": 587,
         "server": "smtp.gmail.com",
         "user": "seba.kauzar@gmail.com",
-        "password": "wdlg jmet uwot xnnx"
-    }, 
+        "password": "liju even dgvn glbn"
 
+    }, 
     "emailRecipient": "seba.kauzar@gmail.com"
-    
 }
 
