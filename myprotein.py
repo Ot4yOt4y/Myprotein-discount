@@ -14,16 +14,21 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
-
+import sys
+import subprocess
 
 class MyProteinScraper:
     def __init__(self, user_data):
         self.login_url = "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account"
         
-        with open(user_data, "r") as file:
-            data = json.load(file)
-        if not data:
-            raise FileNotFoundError(f"Could not load {user_data}.")
+        try:
+            with open(user_data, "r") as file:
+                data = json.load(file)
+            if not data:
+                raise FileNotFoundError(f"Could not load {user_data}.")
+        except Exception as e:
+            print(f"Error while loading user data: {e}")
+            sys.exit(1)
         
         self.data = data
         
@@ -50,36 +55,46 @@ class MyProteinScraper:
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36")  # Set a realistic User-Agent
 
         #for background running
-        #options.add_argument("--headless") 
+        options.add_argument("--headless=new") 
 
-        self.driver = uc.Chrome(options=options)
+        try:
+            self.driver = uc.Chrome(options=options)
+        except Exception as e:
+            print(f"Error while setting up Chrome WebDriver: {e}")
+            sys.exit(1)
 
     def sign_in(self):
         try:
+            subprocess.run(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe Set-WinUserLanguageList en-US -Force", shell=True)
+            
             #print(self.driver.current_url})
             print("Opening the sign-in page")
             self.driver.get(self.login_url)
-
 
             #waiting for email field to show up
             name_input = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//input[@name="E-poštni naslov"]'))
             )
 
-            name_input.clear();
-            pyperclip.copy("")  #Clear the clipboard
-            #actions = ActionChains(self.driver)
-            for chr in email:
+            #name_input.clear();
+            #pyperclip.copy("")
+            actions = ActionChains(self.driver)
+            time.sleep(5)
+            
+            for chr in self.email:
                 if chr == "@":
                     #actions.key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("v").key_up(Keys.ALT).key_up(Keys.CONTROL).perform()
                     #name_input.send_keys(Keys.CONTROL, Keys.ALT, "v")
-                    pyperclip.copy("@")
-                    name_input.send_keys(Keys.CONTROL, "v")
+                    #pyperclip.copy("@")
+                    #name_input.send_keys(Keys.CONTROL, "v")
+                                        
+                    actions.key_down(Keys.SHIFT).send_keys("2").key_up(Keys.SHIFT).perform();                
+                    
                 else:
                     name_input.send_keys(chr)
 
             print("Username entered")
-
+            
 
             #waiting for password field to show up and entering password
             password_input = WebDriverWait(self.driver, 10).until(
@@ -107,8 +122,15 @@ class MyProteinScraper:
             if("/accountHome.account" in self.driver.current_url):
                 print("Successfully signed in!")       
 
+            
+            subprocess.run(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe Set-WinUserLanguageList en-SI -Force", shell=True)    
+
         except Exception as e:
+            self.driver.save_screenshot("sign_in_error.png")
             print(f"Error during sign-in: {e}")
+            self.send_mail("Myprotein scraper error", f"Error during sign-in: {e}")
+            sys.exit(1)
+            
             #print(self.driver.page_source)
         #finally:
             #self.driver.quit()
@@ -136,7 +158,11 @@ class MyProteinScraper:
                 print("Basket page loaded successfully")
 
         except Exception as e:
+            self.driver.save_screenshot("go_to_basket_error.png")
             print(f"Error while going to the basket page: {e}")
+            self.send_mail("Myprotein scraper error", f"Error while going to the basket page: {e}")
+            sys.exit(1)
+
             
             
     def input_code(self):
@@ -159,7 +185,9 @@ class MyProteinScraper:
             unocvi_kodo_button.click()
                     
         except Exception as e:
-            print(f"An error while inputing discount code: {e}")
+            print(f"Error while inputing discount code: {e}")
+            self.send_mail("Myprotein scraper error", f"Error while inputing discount code: {e}")
+            sys.exit(1)
             
         
     def extract_discount_percentage(self):
@@ -179,27 +207,24 @@ class MyProteinScraper:
                 print(f"Discount Percentage: {discount_percentage}%")
                 return discount_percentage
             else:
-                print("No discount percentage found")
-                return None
+                raise Exception("No discount percentage found.")
 
         except Exception as e:
             print(f"Error while extracting the discount: {e}")
-
-            return None
+            self.send_mail("Myprotein scraper error", f"Error while extracting the discount: {e}")
+            sys.exit(1)    
     
-    
-    def send_mail(self, discount_percentage):
+    def send_mail(self, subject, text):
         try:
             email_from = self.smtp_name
             email_to = self.data["emailRecipient"]
-            email_subject = "Myprotein discount is over 50%"
             
             message = MIMEMultipart()
             message["From"] = email_from
             message["To"] = email_to
-            message["Subject"] = email_subject
+            message["Subject"] = subject
             
-            email_text = f"The discount is currently at {discount_percentage}%"
+            email_text = text
             
             message.attach(MIMEText(email_text, "plain"))
             
@@ -213,6 +238,7 @@ class MyProteinScraper:
         
         except Exception as e:
             print(f"Error while sending email: {e}")
+            sys.exit(1)
             
         finally:
             self.driver.quit()
@@ -226,17 +252,9 @@ class MyProteinScraper:
         discount_percentage = self.extract_discount_percentage()
         
         if (discount_percentage >= 50):            
-            self.send_mail(discount_percentage)
+            self.send_mail("Myprotein discount is over 50%", f"The discount is currently at {discount_percentage}%")
 
 if __name__ == "__main__":
-    
-    '''Replace with your own email and password used for myprotein account'''
-    email = "seba.kauzar@gmail.com"
-    password = "8u3UTNWrZSRsY!r"
-    
-    '''Replace these with your gmail name and password used for smtp'''
-    smtp_name = "seba.kauzar@gmail.com"
-    smtp_password = "wdlg jmet uwot xnnx"
 
     scraper = MyProteinScraper("userdata.json")
 
