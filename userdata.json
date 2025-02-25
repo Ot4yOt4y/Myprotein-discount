@@ -1,17 +1,22 @@
 {
-    "comment": "You can setup your smtp password on this link: https://myaccount.google.com/apppasswords; Make sure you have 2-factor authentication enabled",
+    "loginUrl": "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account",
 
     "myProteinAccountData": { 
-        "myproteinUsername": "seba.kauzar@gmail.com",
-        "myproteinPassword": "8u3UTNWrZSRsY!r"
+        "myproteinUsername": "user@gmail.com",
+        "myproteinPassword": "password"
     },
+
     "smtp": {
         "port": 587,
         "server": "smtp.gmail.com",
-        "user": "seba.kauzar@gmail.com",
-        "password": "liju even dgvn glbn"
+        "username": "user@gmail.com",
+        "password": "password"
 
     }, 
-    "emailRecipient": "seba.kauzar@gmail.com"
-}
 
+    "emailRecipient": "user@gmail.com",
+
+    "promoCode": "",
+
+    "notifyWhenDiscount": 55
+}

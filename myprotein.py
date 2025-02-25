@@ -18,9 +18,7 @@ import sys
 import subprocess
 
 class MyProteinScraper:
-    def __init__(self, user_data):
-        self.login_url = "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account"
-        
+    def __init__(self, user_data):        
         try:
             with open(user_data, "r") as file:
                 data = json.load(file)
@@ -32,15 +30,19 @@ class MyProteinScraper:
         
         self.data = data
         
+        self.login_url = data["loginUrl"]
+        
         account_data = data["myProteinAccountData"]
         self.email = account_data["myproteinUsername"]
         self.password = account_data["myproteinPassword"]
         
         smtp_data = data["smtp"]
-        self.smtp_name = smtp_data["user"]
+        self.smtp_name = smtp_data["username"]
         self.smtp_password = smtp_data["password"]
         self.port = smtp_data["port"]
         self.server = smtp_data["server"]
+        
+        self.required_discount = data["notifyWhenDiscount"]
                 
         self.driver = None
 
@@ -251,8 +253,8 @@ class MyProteinScraper:
         
         discount_percentage = self.extract_discount_percentage()
         
-        if (discount_percentage >= 50):            
-            self.send_mail("Myprotein discount is over 50%", f"The discount is currently at {discount_percentage}%")
+        if (discount_percentage >= self.required_discount):            
+            self.send_mail(f"Myprotein discount is over {self.required_discount}%", f"The discount is currently at {discount_percentage}%")
 
 if __name__ == "__main__":
 
