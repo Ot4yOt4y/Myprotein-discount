@@ -6,20 +6,22 @@ This Python script use case is to notify you when Myprotein offers the biggest d
 
 ## How it works
 
-1. Sign in with your Myprotein profile and put the products you want to order in the basket. (The products stay in the basket indefinitely)  
+1. Sign in with your Myprotein profile and put the products you want to order in the basket. (The products stay in the basket indefinitely)
+
 2. Input your personal details in userdata.json file  
 	a. loginUrl - Here you have to place your sign-in URL (depending on your country)  
   b. myProteinAccountData - Input your username and password used to sign-in your Myprotein account  
 	c. smtp - Here you have to input your smtp details with port, server, username and password (You can setup your smtp [here](https://myaccount.google.com/apppasswords))  
  	d. emailRecipient - This is the email address on which you want to be notified with  
 	e. promoCode - Use a promo code of Myprotein athlete based in your country. (Look them up on Instagram)  
-	f. notifyWhenDiscount - Set this value to the percentage of discount you want to be notified for (Historically the biggest discounts are 55%)  
-4. Run with task scheduler, crontab, etc.  
+	f. notifyWhenDiscount - Set this value to the percentage of discount you want to be notified for (Historically the biggest discounts are 55%)
+
+3. Run with task scheduler, crontab, etc.  
 
 ## Avaliable countries 
 
 This python script is currently working for following countries:  
-Slovenia  
+
 Australia  
 Bahrain  
 Bosnia and Herzegovina  
@@ -44,6 +46,7 @@ Poland
 Qatar  
 Romania  
 Saudi Arabia  
+Slovenia  
 Sweden  
 Ukraine  
 United Arab Emirates  
