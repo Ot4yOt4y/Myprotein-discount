@@ -43,6 +43,8 @@ class MyProteinScraper:
         self.server = smtp_data["server"]
         
         self.required_discount = data["notifyWhenDiscount"]
+        
+        self.promo_code = data["promoCode"]
                 
         self.driver = None
 
@@ -173,7 +175,7 @@ class MyProteinScraper:
             promo_code_bracket = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//input[@class="athenaBasket_discountEntryInput"]'))
             )
-            promo_code_bracket.send_keys("PIAFIT")
+            promo_code_bracket.send_keys(self.promo_code)
             
             #move cursor so overlay disappears
             ActionChains(self.driver) \
