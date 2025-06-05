@@ -1,5 +1,5 @@
 {
-    "loginUrl": "https://si.myprotein.com/login.jsp?returnTo=https%3A%2F%2Fsi.myprotein.com%2FaccountHome.account",
+    "loginUrl": "https://si.myprotein.com/account/login",
 
     "myProteinAccountData": { 
         "myproteinUsername": "user@gmail.com",

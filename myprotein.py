@@ -59,7 +59,7 @@ class MyProteinScraper:
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36")  # Set a realistic User-Agent
 
         #for background running
-        options.add_argument("--headless=new") 
+        #options.add_argument("--headless=new") 
 
         try:
             self.driver = uc.Chrome(options=options)
@@ -77,7 +77,7 @@ class MyProteinScraper:
 
             #waiting for email field to show up
             name_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//input[@name="E-poštni naslov"]'))
+                EC.presence_of_element_located((By.XPATH, '//input[@name="email"]'))
             )
 
             #name_input.clear();
@@ -102,7 +102,7 @@ class MyProteinScraper:
 
             #waiting for password field to show up and entering password
             password_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//input[@name="Geslo"]'))
+                EC.presence_of_element_located((By.XPATH, '//input[@name="password"]'))
             )
             password_input.send_keys(self.password)
             print("Password entered")
@@ -110,20 +110,14 @@ class MyProteinScraper:
 
             #clicking on "Prijava" button
             prijava_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//button[@data-testid="button-submit-login"]'))
+                EC.element_to_be_clickable((By.XPATH, '//button[@data-e2e="login_submit_button"]'))
             )
             prijava_button.click()
             print("'Prijava' button has been clicked")
 
-            '''
-            #check if account page is loaded
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//h1[contains(text(), "domača stran računa")]'))
-            )
-            '''    
             #print(self.driver.current_url)
             time.sleep(10)
-            if("/accountHome.account" in self.driver.current_url):
+            if("/account" in self.driver.current_url):
                 print("Successfully signed in!")       
 
             
@@ -145,20 +139,19 @@ class MyProteinScraper:
         try:
             print("Getting to the basket page")
 
-            #locate and click basket button
-            basket_button = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.XPATH, '//a[@href="/my.basket"]'))
-            )
 
-            #for stale element exception
-            #basket_button = self.driver.find_element(By.XPATH, '//a[@href="/my.basket"]')
-            
-            basket_button.click()
+            wait = WebDriverWait(self.driver, 10)
+            basket_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-e2e="basket_link"]')))
+
+            basket_link.click()
+
+            wait.until(EC.url_contains("/basket/"))
+        
             print("Clicked the basket button")
             
             time.sleep(10)
             #print(self.driver.current_url)
-            if("/my.basket" in self.driver.current_url):
+            if("/basket" in self.driver.current_url):
                 print("Basket page loaded successfully")
 
         except Exception as e:
@@ -171,39 +164,46 @@ class MyProteinScraper:
             
     def input_code(self):
         try:
-            #input promo code
-            promo_code_bracket = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//input[@class="athenaBasket_discountEntryInput"]'))
-            )
-            promo_code_bracket.send_keys(self.promo_code)
-            
-            #move cursor so overlay disappears
-            ActionChains(self.driver) \
-                .move_by_offset(7, 9) \
-                .perform()
-            
-            #click on "unovči kodo" button
-            unocvi_kodo_button = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//button[@class="athenaBasket_discountEntryButton"]'))
-            )
-            unocvi_kodo_button.click()
-                    
+            wait = WebDriverWait(self.driver, 20)
+
+            #dismiss cookie pop-up
+            try:
+                consent_button = wait.until(EC.element_to_be_clickable((
+                    By.CSS_SELECTOR,
+                    "#onetrust-accept-btn-handler"
+                )))
+                consent_button.click()
+                print("Closed cookie pop-up")
+            except:
+                print("No cookie pop-up to close")
+
+            promo_code_input = wait.until(EC.element_to_be_clickable((By.ID, "promo-code-input")))
+            promo_code_input.send_keys(self.promo_code)
+
+           #scroll into view
+            self.driver.execute_script("""
+                const button = document.getElementById('promo-code-add');
+                button.scrollIntoView({behavior: 'smooth', block: 'center'});
+                setTimeout(() => button.click(), 100); 
+            """)
+            time.sleep(2)
+
+            wait.until(EC.element_to_be_clickable((By.ID, "promo-code-add"))).click()
+
         except Exception as e:
             print(f"Error while inputing discount code: {e}")
             self.send_mail("Myprotein scraper error", f"Error while inputing discount code: {e}")
             sys.exit(1)
-            
+
         
     def extract_discount_percentage(self):
         try:
             #wait for the discount to appear
-            discount = WebDriverWait(self.driver, 15).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "athenaBasket_totalSavingsMessage"))
-            )
-
+            discount = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//p[contains(text(), "%")]')))
+            
             discount_text = discount.text
-            #print(discount_text)
-
+  
             #extract the discount percentage
             match = re.search(r"(\d+)%", discount_text)
             if match:
