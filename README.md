@@ -2,7 +2,7 @@
 
 Don't want to constantly check when the highest discounts during "Impact Week" will be available? When using Myprotein athletes' promo codes, there is only a short time window in which the code provides the highest discount. Therefore, if you don't constantly check Instagram, you will probably miss out.
 
-This Python script use case is to notify you when Myprotein offers the biggest discounts available.
+This Python script notifies you when Myprotein offers the biggest discount.
 
 ## How it works
 
