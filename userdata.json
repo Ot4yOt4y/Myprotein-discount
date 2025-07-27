@@ -1,11 +1,6 @@
 {
     "productUrl": "https://si.myprotein.com/p/sports-nutrition/kreatin-monohidrat/12456626/",
 
-    "myProteinAccountData": { 
-        "myproteinUsername": "user@gmail.com",
-        "myproteinPassword": "password"
-    },
-
     "smtp": {
         "port": 587,
         "server": "smtp.gmail.com",
@@ -18,5 +13,5 @@
 
     "promoCode": "",
 
-    "notifyWhenDiscount": 55
+    "notifyWhenDiscount": 50
 }
