@@ -30,7 +30,7 @@ class MyProteinScraper:
         
         self.data = data
         
-        self.login_url = data["loginUrl"]
+        self.product_url = data["productUrl"]
         
         account_data = data["myProteinAccountData"]
         self.email = account_data["myproteinUsername"]
@@ -59,21 +59,21 @@ class MyProteinScraper:
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36")  # Set a realistic User-Agent
 
         #for background running
-        #options.add_argument("--headless=new") 
+        options.add_argument("--headless=new") 
 
         try:
             self.driver = uc.Chrome(options=options)
         except Exception as e:
             print(f"Error while setting up Chrome WebDriver: {e}")
             sys.exit(1)
-
+    '''
     def sign_in(self):
         try:
             subprocess.run(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe Set-WinUserLanguageList en-US -Force", shell=True)
             
             #print(self.driver.current_url})
             print("Opening the sign-in page")
-            self.driver.get(self.login_url)
+            self.driver.get(self.product_url)
 
             #waiting for email field to show up
             name_input = WebDriverWait(self.driver, 10).until(
@@ -132,7 +132,22 @@ class MyProteinScraper:
             #print(self.driver.page_source)
         #finally:
             #self.driver.quit()
-
+    '''
+    
+    def add_product_to_basket(self):
+        self.driver.get(self.product_url)
+    
+        cookies_button = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//button[@id="onetrust-accept-btn-handler"]'))
+        )
+        cookies_button.click()
+        
+        add_to_basket_button = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//button[@data-e2e="product_add-to-basket"]'))
+        )
+        add_to_basket_button.click()
+        print("'Add to basket' button has been clicked")
+        
 
     def go_to_basket(self):
         #time.sleep(10)
@@ -141,7 +156,7 @@ class MyProteinScraper:
 
 
             wait = WebDriverWait(self.driver, 10)
-            basket_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-e2e="basket_link"]')))
+            basket_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-e2e="product_go-to-basket"]')))
 
             basket_link.click()
 
@@ -198,25 +213,42 @@ class MyProteinScraper:
         
     def extract_discount_percentage(self):
         try:
-            #wait for the discount to appear
-            discount = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//p[contains(text(), "%")]')))
-            
-            discount_text = discount.text
-  
-            #extract the discount percentage
-            match = re.search(r"(\d+)%", discount_text)
-            if match:
-                discount_percentage = int(match.group(1))  #to integer
-                print(f"Discount Percentage: {discount_percentage}%")
-                return discount_percentage
-            else:
-                raise Exception("No discount percentage found.")
+            time.sleep(5)
+
+            percentages = self.driver.find_elements(By.XPATH, '//*[contains(text(), "%")]')
+            valid_percentages = []
+
+            for percent in percentages:
+                tag_name = percent.tag_name.lower()
+                if tag_name in ["style", "script"]:
+                    continue
+
+                text = self.driver.execute_script("return arguments[0].textContent;", percent).strip()
+
+                if re.search(r'(width|padding|margin|opacity|font|border|background)[\s:-]*\d+%', text, re.IGNORECASE):
+                    continue
+                        
+                #print(text)
+
+                if "!" in text:
+                    match = re.search(r"(\d+)%", text)
+                    percentage = int(match.group(1))
+                    valid_percentages.append(percentage)
+
+            if valid_percentages:
+                return valid_percentages[0]
+               
+
+            raise Exception("No percentage with !")
 
         except Exception as e:
             print(f"Error while extracting the discount: {e}")
             self.send_mail("Myprotein scraper error", f"Error while extracting the discount: {e}")
-            sys.exit(1)    
+            sys.exit(1)
+
+
+
+
     
     def send_mail(self, subject, text):
         try:
@@ -249,7 +281,8 @@ class MyProteinScraper:
     
     def run(self):
         self.driver_setup()
-        self.sign_in()
+        #self.sign_in()
+        self.add_product_to_basket()
         self.go_to_basket()
         self.input_code()
         
